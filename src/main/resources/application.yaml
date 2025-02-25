@@ -1,0 +1,21 @@
+ktor:
+    application:
+        modules:
+            - cn.straosp.workrecord.ApplicationKt.module
+    deployment:
+        port: 8080
+jwt:
+  audience: "work_record"
+  realm: "work_record_server"
+  issuer: "straosp.cn"
+  secret: "straosp"
+
+headerFile: E:\Project\Ktor\WorkRecordServer\resources\static
+
+database:
+  url: "jdbc:mysql://10.10.10.10:3306/work_record"
+  driverClassName: "com.mysql.cj.jdbc.Driver"
+  username: "work_record"
+  password: "785125ABC"
+  initialSize: 10
+  maxActive: 100

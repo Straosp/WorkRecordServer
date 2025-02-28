@@ -9,15 +9,14 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.http.content.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
+import java.io.File
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
-import java.io.File
 
 fun Routing.accountController(){
     val accountService by application.inject<AccountService>()
@@ -39,7 +38,7 @@ fun Routing.accountController(){
                     .withClaim(Constant.TOKEN_CLAIM_ACCOUNT_ID_KEY,account?.id)
                     .withExpiresAt(localDateTime)
                     .sign(Algorithm.HMAC256(jwtSecret))
-                call.respond(R.success(token))
+                call.respond(R.success(data = Token(token)))
             }else{
                 call.respond(R.error())
             }
@@ -69,9 +68,13 @@ fun Routing.accountController(){
             }
         }
         authenticate {
-            post("/uploadHeader"){
-                val jwtPrincipal = call.principal<JWTPrincipal>()
-                val accountID = jwtPrincipal?.payload?.getClaim("accountID")?.asInt() ?: 0
+            post("/{accountId}/avatar"){
+                val accountId = call.pathParameters["accountId"] ?: ""
+                val regex = Regex("\\d*")
+                if (!regex.matches(accountId)){
+                    call.respond(R.parameterError())
+                    return@post
+                }
                 val multiplatform = runCatching { call.receiveMultipart() }.getOrNull()
                 if (null == multiplatform){
                     call.respond(R.error("未收到图片"))
@@ -83,9 +86,9 @@ fun Routing.accountController(){
                         is PartData.FileItem -> {
                             data.originalFileName?.let {fileName ->
                                 val ext = File(fileName).extension
-                                val saveFileName = "header_${System.currentTimeMillis()}_${accountID}.$ext"
+                                val saveFileName = "header_${System.currentTimeMillis()}_${accountId}.$ext"
                                 SaveFileUtil.getInstance().saveHeaderFile(saveFileName,data.provider)
-                                when (val result = accountService.uploadHeader(accountID,saveFileName)){
+                                when (val result = accountService.uploadHeader(accountId.toInt(),saveFileName)){
                                     is RequestResult.Success<*> -> {
                                         call.respond(R.success())
                                     }
@@ -103,22 +106,29 @@ fun Routing.accountController(){
                 }
                 call.respond(R.error())
             }
-            post("/updatePassword"){
-                val jwtPrincipal = call.principal<JWTPrincipal>()
-                val accountID = jwtPrincipal?.payload?.getClaim("accountID")?.asInt() ?: 0
+            put("/{accountId}/password"){
+                val accountId = call.pathParameters["accountId"] ?: ""
+                val regex = Regex("\\d*")
+                if (!regex.matches(accountId)){
+                    call.respond(R.parameterError())
+                    return@put
+                }
                 val password = runCatching { call.receive<UpdatePassword>() }.getOrNull() ?: UpdatePassword("","")
                 if (password.oldPassword == password.newPassword){
                     call.respond(R.parameterError())
-                    return@post
+                    return@put
                 }
-                when(accountService.updatePassword(accountID,password.oldPassword,password.newPassword)){
+                when(val result = accountService.updatePassword(accountId.toInt(),password.oldPassword,password.newPassword)){
                     is RequestResult.Success<*> -> {
                         call.respond(R.success())
                     }
                     is RequestResult.Failure -> {
-                        call.respond(R.error())
+                        call.respond(R.error(result.errorMessage))
                     }
                 }
+            }
+            get("/{accountId}"){
+
             }
         }
     }

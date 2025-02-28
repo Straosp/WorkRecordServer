@@ -39,6 +39,9 @@ object Constant {
     const val UPDATE_WORK_RECORD_FAILED_CODE = 190
     const val UPDATE_WORK_RECORD_FAILED_MESSAGE = "更新失败，更新后的时间内已经存在记录"
 
+    const val INSERT_WORK_RECORD_FAILED_CODE = 110
+    const val INSERT_WORK_RECORD_FAILED_MESSAGE = "插入失败，当前时间已经存在记录"
+
 
 
 }

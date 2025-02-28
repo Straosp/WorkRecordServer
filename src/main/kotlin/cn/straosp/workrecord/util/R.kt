@@ -22,6 +22,7 @@ data class R<T>(
         fun error(message: String) = R(101,message,null)
         fun <T> error(message: String,data:T) = R(102,message,data)
         fun error(code: Int,message: String) = R(code,message,null)
+        fun error(errorMessage: RequestErrorMessage) = R(errorMessage.code,errorMessage.msg ?: "",null)
         fun parameterError() = R(Constant.RESPONSE_ERROR_PARAMETER_CODE,Constant.RESPONSE_ERROR_PARAMETER_MESSAGE,null)
 
     }

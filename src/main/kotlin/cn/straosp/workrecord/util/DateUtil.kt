@@ -18,6 +18,7 @@ fun LocalDate.toTimestamp():Long {
     return localDateTime.toEpochSecond(ZoneId.systemDefault().rules.getOffset(localDateTime)) * 1000L
 }
 fun LocalDate.toISODateString() = "${this.year}-${this.monthValue.toString().padStart(2,'0')}-${this.dayOfMonth.toString().padStart(2,'0')}"
+fun LocalDate.toYearMonthDate() = "${this.year}-${this.monthValue.toString().padStart(2,'0')}"
 
 private val dayOfMonth = intArrayOf(0,31,28,31,30,31,30,31,31,30,31,30,31)
 fun Int.dayOfMonth(year:Int): Int {
@@ -51,10 +52,10 @@ fun LocalDate.toCalendar():Calendar{
 }
 fun getLunarFirstDayToSolar(year:Int): LocalDate{
     val calendar = LunarCalendar.lunar2Solar(year,1,1, isLeapYearAndFebruaryDays(year).first)
-    return LocalDate.of(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH))
+    return LocalDate.of(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH) + 1,calendar.get(Calendar.DAY_OF_MONTH))
 }
 fun getLunarLastDayToSolar(year:Int): LocalDate{
     val calendar = LunarCalendar.lunar2Solar(year + 1,1,1, isLeapYearAndFebruaryDays(year).first)
-    return LocalDate.of(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH),calendar.get(Calendar.DAY_OF_MONTH))
+    return LocalDate.of(calendar.get(Calendar.YEAR),calendar.get(Calendar.MONTH) + 1,calendar.get(Calendar.DAY_OF_MONTH))
 }
 

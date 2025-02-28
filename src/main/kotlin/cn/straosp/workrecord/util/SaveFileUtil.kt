@@ -14,7 +14,7 @@ class SaveFileUtil {
         private lateinit var HEADER_FILE_PATH: String
 
         fun initEnvironment(environment: ApplicationEnvironment){
-            HEADER_FILE_PATH = environment.config.property("headerFile").getString()
+            HEADER_FILE_PATH = environment.config.property("file").getString()
             println(HEADER_FILE_PATH)
             val headerFile = File(HEADER_FILE_PATH)
             if (!headerFile.exists()){

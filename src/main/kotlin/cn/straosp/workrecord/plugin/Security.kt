@@ -28,8 +28,8 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                val phone = credential.payload.getClaim("phone").asString()
-                val password = credential.payload.getClaim("password").asString()
+                val phone = credential.payload.getClaim(Constant.TOKEN_CLAIM_PHONE_KEY).asString()
+                val password = credential.payload.getClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY).asString()
                 if (accountService.verifyAccount(phone,password).isSuccess){
                     JWTPrincipal(credential.payload)
                 }

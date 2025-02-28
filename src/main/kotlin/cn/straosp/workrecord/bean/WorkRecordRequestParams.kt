@@ -34,6 +34,15 @@ data class WorkRecord(
 )
 
 @Serializable
+data class MonthWorkSummary(
+    val workDate:String,
+    val workingDays:Int,
+    val totalSalary:Double,
+    val totalMultipleProductQuantity:Double,
+    val totalSingleProductQuantity:Double
+)
+
+@Serializable
 data class YearWorkSummary(
     val startWorkDate:String,
     val endWorkDate:String,
@@ -45,7 +54,6 @@ data class YearWorkSummary(
 
 @Serializable
 data class UpdateWorkRecord(
-    val id: Int,
     val teamSize: Int? = 0,
     val singleProductQuantity: Double? = .0,
     val singleProductPrice: Double? = .0,

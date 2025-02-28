@@ -10,7 +10,7 @@ jwt:
   issuer: "straosp.cn"
   secret: "straosp"
 
-headerFile: E:\Project\Ktor\WorkRecordServer\resources\static
+file: "./static"
 
 database:
   url: "jdbc:mysql://10.10.10.10:3306/work_record"

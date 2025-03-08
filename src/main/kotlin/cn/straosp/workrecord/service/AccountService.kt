@@ -6,9 +6,10 @@ import cn.straosp.workrecord.util.RequestResult
 
 interface AccountService {
 
-    fun verifyAccount(phone: String,password: String): Result<Account>
-    fun registerAccount(phone: String,password: String): Result<Account>
-    fun updateAccountInformation(accountId:Int,information: AccountInformation): Result<Boolean>
-    fun uploadHeader(accountId: Int,headerFileName:String): RequestResult
-    fun updatePassword(accountId: Int,oldPassword:String,newPassword: String): RequestResult
+    fun verifyAccount(phone: String,password: String): RequestResult<Account>
+    fun registerAccount(phone: String,password: String): RequestResult<Account>
+    fun updateAccountInformation(accountId:Int,information: AccountInformation): RequestResult<Boolean>
+    fun uploadHeader(accountId: Int,headerFileName:String): RequestResult<Boolean>
+    fun updatePassword(accountId: Int,oldPassword:String,newPassword: String): RequestResult<Boolean>
+    fun getAccountById(accountId: Int):RequestResult<Account>
 }

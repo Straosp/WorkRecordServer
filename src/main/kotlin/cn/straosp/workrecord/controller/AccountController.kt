@@ -27,44 +27,46 @@ fun Routing.accountController(){
         post("/login"){
             val login = runCatching { call.receive<Login>() }.getOrNull()
             val result = accountService.verifyAccount(login?.phone ?: "",login?.password ?: "")
-            if (result.isSuccess){
-                val account = result.getOrNull()
-                val localDateTime = Date.from(LocalDateTime.now(ZoneId.systemDefault()).plusMonths(1).atZone(ZoneId.systemDefault()).toInstant())
-                val token = JWT.create()
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtIssuer)
-                    .withClaim(Constant.TOKEN_CLAIM_PHONE_KEY,account?.phone)
-                    .withClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY, account?.password)
-                    .withClaim(Constant.TOKEN_CLAIM_ACCOUNT_ID_KEY,account?.id)
-                    .withExpiresAt(localDateTime)
-                    .sign(Algorithm.HMAC256(jwtSecret))
-                call.respond(R.success(data = Token(token)))
-            }else{
-                call.respond(R.error())
+            when(result){
+                is RequestResult.Success -> {
+                    val localDateTime = Date.from(LocalDateTime.now(ZoneId.systemDefault()).plusMonths(1).atZone(ZoneId.systemDefault()).toInstant())
+                    val token = JWT.create()
+                        .withAudience(jwtAudience)
+                        .withIssuer(jwtIssuer)
+                        .withClaim(Constant.TOKEN_CLAIM_PHONE_KEY, result.data.phone)
+                        .withClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY, result.data.password)
+                        .withClaim(Constant.TOKEN_CLAIM_ACCOUNT_ID_KEY, result.data.id)
+                        .withExpiresAt(localDateTime)
+                        .sign(Algorithm.HMAC256(jwtSecret))
+                    call.respond(R.success(data = Token(token)))
+                }
+                is RequestResult.Failure -> {
+                    call.respond(result.errorMessage.toR())
+                }
             }
         }
         post("/register"){
             val login = runCatching { call.receive<Login>() }.getOrNull()
             if (null == login || login.phone.isEmpty() || login.password.isEmpty()){
-                call.respond(R.parameterError())
+                call.respond(R.parameterError("phone","password"))
                 return@post
             }
-            val result = accountService.registerAccount(login.phone, login.password)
-            if (result.isSuccess){
-                val account = result.getOrNull()
-                val localDateTime = Date.from(LocalDateTime.now(ZoneId.systemDefault()).plusMonths(1).atZone(ZoneId.systemDefault()).toInstant())
-                val token = JWT.create()
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtIssuer)
-                    .withClaim(Constant.TOKEN_CLAIM_PHONE_KEY,account?.phone)
-                    .withClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY, account?.password)
-                    .withClaim(Constant.TOKEN_CLAIM_ACCOUNT_ID_KEY,account?.id)
-                    .withExpiresAt(localDateTime)
-                    .sign(Algorithm.HMAC256(jwtSecret))
-                call.respond(R.success(data = Token(token)))
-            }else{
-                val error = result.exceptionOrNull() as RequestErrorMessage
-                call.respond(error.toR())
+            when(val result = accountService.registerAccount(login.phone, login.password)){
+                is RequestResult.Success -> {
+                    val localDateTime = Date.from(LocalDateTime.now(ZoneId.systemDefault()).plusMonths(1).atZone(ZoneId.systemDefault()).toInstant())
+                    val token = JWT.create()
+                        .withAudience(jwtAudience)
+                        .withIssuer(jwtIssuer)
+                        .withClaim(Constant.TOKEN_CLAIM_PHONE_KEY, result.data.phone)
+                        .withClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY, result.data.password)
+                        .withClaim(Constant.TOKEN_CLAIM_ACCOUNT_ID_KEY, result.data.id)
+                        .withExpiresAt(localDateTime)
+                        .sign(Algorithm.HMAC256(jwtSecret))
+                    call.respond(R.success(data = Token(token)))
+                }
+                is RequestResult.Failure -> {
+                    call.respond(result.errorMessage.toR())
+                }
             }
         }
         authenticate {
@@ -72,7 +74,7 @@ fun Routing.accountController(){
                 val accountId = call.pathParameters["accountId"] ?: ""
                 val regex = Regex("\\d*")
                 if (!regex.matches(accountId)){
-                    call.respond(R.parameterError())
+                    call.respond(R.parameterError("accountId"))
                     return@post
                 }
                 val multiplatform = runCatching { call.receiveMultipart() }.getOrNull()
@@ -89,7 +91,7 @@ fun Routing.accountController(){
                                 val saveFileName = "header_${System.currentTimeMillis()}_${accountId}.$ext"
                                 SaveFileUtil.getInstance().saveHeaderFile(saveFileName,data.provider)
                                 when (val result = accountService.uploadHeader(accountId.toInt(),saveFileName)){
-                                    is RequestResult.Success<*> -> {
+                                    is RequestResult.Success -> {
                                         call.respond(R.success())
                                     }
                                     is RequestResult.Failure -> {
@@ -110,12 +112,12 @@ fun Routing.accountController(){
                 val accountId = call.pathParameters["accountId"] ?: ""
                 val regex = Regex("\\d*")
                 if (!regex.matches(accountId)){
-                    call.respond(R.parameterError())
+                    call.respond(R.parameterError("accountId"))
                     return@put
                 }
                 val password = runCatching { call.receive<UpdatePassword>() }.getOrNull() ?: UpdatePassword("","")
                 if (password.oldPassword == password.newPassword){
-                    call.respond(R.parameterError())
+                    call.respond(R.parameterError("oldPassword","newPassword"))
                     return@put
                 }
                 when(val result = accountService.updatePassword(accountId.toInt(),password.oldPassword,password.newPassword)){
@@ -128,7 +130,20 @@ fun Routing.accountController(){
                 }
             }
             get("/{accountId}"){
-
+                val accountId = call.pathParameters["accountId"] ?: ""
+                val regex = Regex("\\d*")
+                if (!regex.matches(accountId)){
+                    call.respond(R.parameterError("accountId"))
+                    return@get
+                }
+                when(val result = accountService.getAccountById(accountId.toInt())){
+                    is RequestResult.Success -> {
+                        call.respond(result.data)
+                    }
+                    is RequestResult.Failure -> {
+                        call.respond(result.errorMessage.toR())
+                    }
+                }
             }
         }
     }

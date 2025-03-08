@@ -24,7 +24,7 @@ data class AddWorkRecord(
 @Serializable
 data class WorkRecord(
     val id: Int,
-    val teamSize: Int? = 0,
+    val teamSize: Int = 0,
     val singleProductQuantity: Double,
     val singleProductPrice: Double,
     val multipleProductQuantity:Double,
@@ -54,10 +54,10 @@ data class YearWorkSummary(
 
 @Serializable
 data class UpdateWorkRecord(
-    val teamSize: Int? = 0,
-    val singleProductQuantity: Double? = .0,
-    val singleProductPrice: Double? = .0,
-    val multipleProductQuantity:Double? = .0,
-    val multipleProductPrice: Double? = .0,
+    val teamSize: Int,
+    val singleProductQuantity: Double,
+    val singleProductPrice: Double,
+    val multipleProductQuantity:Double,
+    val multipleProductPrice: Double,
     val workDate: String,
 )

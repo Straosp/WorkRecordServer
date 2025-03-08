@@ -12,7 +12,7 @@ import java.time.LocalDate
 
 class WorkRecordServiceImpl : WorkRecordService {
 
-    override fun addWorkRecord(accountId: Int, workRecord: AddWorkRecord): RequestResult {
+    override fun addWorkRecord(accountId: Int, workRecord: AddWorkRecord): RequestResult<Boolean> {
         val wr = AppDatabase.database.from(WorkRecordTable).select()
             .where {
                 (WorkRecordTable.workDate eq workRecord.workDate.toLocalDate()) and ( WorkRecordTable.accountId eq  accountId)
@@ -34,7 +34,7 @@ class WorkRecordServiceImpl : WorkRecordService {
         return RequestResult.Success(true)
     }
 
-    override fun addWorkRecords(accountId: Int, workRecords: List<AddWorkRecord>): Result<Boolean> {
+    override fun addWorkRecords(accountId: Int, workRecords: List<AddWorkRecord>): RequestResult<Boolean> {
         AppDatabase.database.useTransaction {
             AppDatabase.database.batchInsert(WorkRecordTable){
                 workRecords.forEach { wr ->
@@ -49,18 +49,18 @@ class WorkRecordServiceImpl : WorkRecordService {
                 }
             }
         }
-        return Result.success(true)
+        return RequestResult.Success(true)
     }
 
-    override fun getMonthWorkRecords(accountId: Int, month: Int): List<WorkRecord> {
-        val startLocalDate = LocalDate.of(getCurrentYear(),month,1)
-        val endLocalDate = LocalDate.of(getCurrentYear(),month,month.dayOfMonth(getCurrentYear()))
+    override fun getMonthWorkRecords(accountId: Int,year:Int, month: Int): List<WorkRecord> {
+        val startLocalDate = LocalDate.of(year,month,1)
+        val endLocalDate = LocalDate.of(year,month,month.dayOfMonth(year))
         val result = AppDatabase.database.from(WorkRecordTable).select().where {
             WorkRecordTable.workDate.between(LocalDateRange(startLocalDate,endLocalDate)) and   (WorkRecordTable.accountId eq accountId)
         }.map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
-                teamSize = row[WorkRecordTable.teamSize],
+                teamSize = row[WorkRecordTable.teamSize] ?: 0,
                 singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
                 singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
                 multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
@@ -72,15 +72,15 @@ class WorkRecordServiceImpl : WorkRecordService {
         return result
     }
 
-    override fun getMonthWorkSummary(accountId: Int, month: Int): MonthWorkSummary {
-        val startLocalDate = LocalDate.of(getCurrentYear(),month,1)
-        val endLocalDate = LocalDate.of(getCurrentYear(),month,month.dayOfMonth(getCurrentYear()))
+    override fun getMonthWorkSummary(accountId: Int,year:Int, month: Int): MonthWorkSummary {
+        val startLocalDate = LocalDate.of(year,month,1)
+        val endLocalDate = LocalDate.of(year,month,month.dayOfMonth(year))
         val result = AppDatabase.database.from(WorkRecordTable).select().where {
             WorkRecordTable.workDate.between(LocalDateRange(startLocalDate,endLocalDate)) and   (WorkRecordTable.accountId eq accountId)
         }.map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
-                teamSize = row[WorkRecordTable.teamSize],
+                teamSize = row[WorkRecordTable.teamSize] ?: 0,
                 singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
                 singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
                 multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
@@ -93,8 +93,12 @@ class WorkRecordServiceImpl : WorkRecordService {
             roundingMode = RoundingMode.DOWN
         }
         val salary = result.groupBy { it.teamSize }.map { (key, workRecords) ->
-            key?.let {
-                workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity) + (it.multipleProductPrice.times(it.multipleProductQuantity).div(key)) }
+            if (key == 0){
+                workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity)}
+            }else{
+                key?.let {
+                    workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity) + (it.multipleProductPrice.times(it.multipleProductQuantity).div(key)) }
+                }
             }
         }.sumOf { it ?: .0 }
         return MonthWorkSummary(
@@ -114,7 +118,7 @@ class WorkRecordServiceImpl : WorkRecordService {
         }.map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
-                teamSize = row[WorkRecordTable.teamSize],
+                teamSize = row[WorkRecordTable.teamSize] ?: 0,
                 singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
                 singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
                 multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
@@ -134,7 +138,7 @@ class WorkRecordServiceImpl : WorkRecordService {
         }.map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
-                teamSize = row[WorkRecordTable.teamSize],
+                teamSize = row[WorkRecordTable.teamSize] ?: 0,
                 singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
                 singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
                 multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
@@ -166,7 +170,27 @@ class WorkRecordServiceImpl : WorkRecordService {
 
     }
 
-    override fun updateWorkRecord(accountId: Int, workRecordId:Int,workRecord: UpdateWorkRecord): RequestResult {
+    override fun getWorkRecordDetailById(accountId: Int, workRecordId: Int): WorkRecord? {
+        val result = AppDatabase.database.from(WorkRecordTable).select()
+            .where {
+                (WorkRecordTable.accountId eq accountId) and (WorkRecordTable.id eq workRecordId)
+            }
+            .map { row ->
+                WorkRecord(
+                    id = row[WorkRecordTable.id] ?: 0,
+                    teamSize = row[WorkRecordTable.teamSize] ?: 0,
+                    singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
+                    singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
+                    multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
+                    multipleProductQuantity = row[WorkRecordTable.multipleProductQuantity] ?: .0,
+                    workDate = (row[WorkRecordTable.workDate])?.toISODateString() ?: "",
+                    accountId = row[WorkRecordTable.accountId] ?: 0
+                )
+            }
+        return if (result.isNullOrEmpty()) null else result.first()
+    }
+
+    override fun updateWorkRecord(accountId: Int, workRecordId:Int,workRecord: UpdateWorkRecord): RequestResult<Boolean> {
         val wr = AppDatabase.database.from(WorkRecordTable).select()
             .where {
                 (WorkRecordTable.accountId eq accountId) and (WorkRecordTable.workDate eq workRecord.workDate.toLocalDate())

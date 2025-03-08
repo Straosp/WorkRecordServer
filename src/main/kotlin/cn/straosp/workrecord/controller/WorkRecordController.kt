@@ -20,9 +20,9 @@ fun Routing.workRecordController(){
                 val workRecord = runCatching { call.receive<AddWorkRecord>() }.getOrNull()
                 workRecord?.let {
                     if (workRecord.teamSize == 0 && workRecord.singleProductQuantity == .0){
-                     call.respond(R.parameterError())
+                     call.respond(R.parameterError("错误： teamSize == 0 AND singleProductQuantity == 0"))
                     }else if ((workRecord.teamSize ?: 0) > 0 && workRecord.multipleProductQuantity <= .0){
-                        call.respond(R.parameterError())
+                        call.respond(R.parameterError("错误： teamSize > 0 AND multipleProductQuantity <= 0"))
                     }
                     when(val result = workRecordService.addWorkRecord(accountId = getAccountId(),workRecord = workRecord)){
                         is RequestResult.Success<*> -> {
@@ -34,20 +34,20 @@ fun Routing.workRecordController(){
                     }
                     return@post
                 }
-                call.respond(R.parameterError())
+                call.respond(R.parameterError("JSON To AddWorkRecord Failed"))
             }
             put("/{id}"){
                 val workRecord = runCatching { call.receive<UpdateWorkRecord>() }.getOrNull()
                 val id = runCatching { call.pathParameters["id"]?.toInt() }.getOrNull() ?: -1
                 if (id == -1) {
-                    call.respond(R.parameterError())
+                    call.respond(R.parameterError("workRecordId"))
                     return@put
                 }
                 workRecord?.let {
                     if (workRecord.teamSize == 0 && workRecord.singleProductQuantity == .0){
-                        call.respond(R.parameterError())
+                        call.respond(R.parameterError("teamSize = 0 AND singleProductQuantity == 0"))
                     }else if ((workRecord.teamSize ?: 0) > 0 && (workRecord.multipleProductQuantity ?: .0) <= .0){
-                        call.respond(R.parameterError())
+                        call.respond(R.parameterError("teamSize > 0 AND multipleProductQuantity <= 0"))
                     }else {
                         when(val result = workRecordService.updateWorkRecord(accountId = getAccountId(), workRecordId = id,workRecord = workRecord)){
                             is RequestResult.Success<*> -> {
@@ -60,44 +60,68 @@ fun Routing.workRecordController(){
                     }
                     return@put
                 }
-                call.respond(R.parameterError())
+                call.respond(R.parameterError("JSON To UpdateWorkRecord Failed"))
             }
             delete("/{id}") {
                 val id = runCatching { call.pathParameters["id"]?.toInt() }.getOrNull() ?: -1
                 if (id == -1) {
-                    call.respond(R.parameterError())
+                    call.respond(R.parameterError("workRecordId"))
                     return@delete
                 }
                 workRecordService.deleteWorkRecord(accountId = getAccountId(), workRecordId = id)
                 call.respond(R.success())
             }
-            get("/{month}"){
-                val regex = Regex("\\d{1,2}")
-                val requestType = call.queryParameters["type"]
-                val month = call.pathParameters["month"] ?: ""
-                if (!regex.matches(month)){
-                    call.respond(R.parameterError())
+            get("/{id}"){
+                val workRecordIdRegex = Regex("\\d*")
+                val workRecordId = call.pathParameters["id"] ?: ""
+                if (!workRecordIdRegex.matches(workRecordId)){
+                    call.respond(R.parameterError("workRecordId"))
                     return@get
                 }
-                if (requestType.isNullOrEmpty() || requestType == "detail"){
-                    call.respond(R.success(data = workRecordService.getMonthWorkRecords(accountId = getAccountId(),month = month.toInt())))
-                }else if (requestType.isNotEmpty() && requestType == "summary" ){
-                    call.respond(R.success(data = workRecordService.getMonthWorkSummary(accountId = getAccountId(),month = month.toInt())))
-                }
+                call.respond(
+                    R.success(data = workRecordService.getWorkRecordDetailById(accountId = getAccountId(), workRecordId = workRecordId.toInt()))
+                )
             }
-            get("lunar/{year}"){
-                val regex = Regex("[2-9][0-9]{3}")
-                val requestType = call.queryParameters["type"]
-                val year = call.pathParameters["year"] ?: ""
-                if (!regex.matches(year)){
-                    call.respond(R.parameterError())
+            get("/month/detail"){
+                val monthRegex = Regex("\\d{1,2}")
+                val yearRegex = Regex("\\d{4}")
+                val year = call.queryParameters["year"] ?: ""
+                val month = call.queryParameters["month"] ?: ""
+                if (!monthRegex.matches(month) || !yearRegex.matches(year)){
+                    call.respond(R.parameterError("年或月不合法"))
                     return@get
                 }
-                if (requestType.isNullOrEmpty() || requestType == "detail"){
-                    call.respond(R.success(data = workRecordService.getLunarYearWorkRecords(accountId = getAccountId(),year = year.toInt())))
-                }else if (requestType.isNotEmpty() && requestType == "summary" ){
-                    call.respond(R.success(data = workRecordService.getLunarYearWorkSummary(accountId = getAccountId(),year = year.toInt())))
+                call.respond(R.success(data = workRecordService.getMonthWorkRecords(accountId = getAccountId(), year = year.toInt(),month = month.toInt())))
+            }
+            get("/month/summary"){
+                val monthRegex = Regex("\\d{1,2}")
+                val yearRegex = Regex("\\d{4}")
+                val year = call.queryParameters["year"] ?: ""
+                val month = call.queryParameters["month"] ?: ""
+                if (!monthRegex.matches(month) || !yearRegex.matches(year)){
+                    call.respond(R.parameterError("年或月不合法"))
+                    return@get
                 }
+                call.respond(R.success(data = workRecordService.getMonthWorkSummary(accountId = getAccountId(), year = year.toInt(),month = month.toInt())))
+            }
+            get("lunar/detail"){
+                val regex = Regex("[2-9][0-9]{3}")
+                val year = call.queryParameters["year"] ?: ""
+                if (!regex.matches(year)){
+                    call.respond(R.parameterError("年不合法"))
+                    return@get
+                }
+                call.respond(R.success(data = workRecordService.getLunarYearWorkRecords(accountId = getAccountId(),year = year.toInt())))
+
+            }
+            get("lunar/summary"){
+                val regex = Regex("[2-9][0-9]{3}")
+                val year = call.queryParameters["year"] ?: ""
+                if (!regex.matches(year)){
+                    call.respond(R.parameterError("年不合法"))
+                    return@get
+                }
+                call.respond(R.success(data = workRecordService.getLunarYearWorkSummary(accountId = getAccountId(),year = year.toInt())))
             }
         }
     }

@@ -11,17 +11,22 @@ import org.ktorm.entity.*
 
 class AccountServiceImpl: AccountService {
 
-
-    override fun verifyAccount(phone: String, password: String): Result<Account> {
-        val account = AppDatabase.database.sequenceOf(AccountTable).find { it.phone eq phone and (it.password eq password) }?.toAccount()
-            ?: return Result.failure(RequestErrorMessage(Constant.NOT_FOUND_ACCOUNT_CODE,Constant.NOT_FOUND_ACCOUNT_MESSAGE))
-        return Result.success(account)
+    override fun getAccountById(accountId: Int): RequestResult<Account> {
+        val account = AppDatabase.database.sequenceOf(AccountTable).find { it.id eq accountId }?.toAccount()
+            ?: return RequestResult.Failure(RequestErrorMessage(Constant.ACCOUNT_SELECT_FAILED_CODE,Constant.ACCOUNT_SELECT_FAILED_MESSAGE))
+        return RequestResult.Success(account)
     }
 
-    override fun registerAccount(phone: String, password: String): Result<Account> {
+    override fun verifyAccount(phone: String, password: String): RequestResult<Account> {
+        val account = AppDatabase.database.sequenceOf(AccountTable).find { it.phone eq phone and (it.password eq password) }?.toAccount()
+            ?: return RequestResult.Failure(RequestErrorMessage(Constant.AUTHENTICATION_FAILED_CODE,Constant.AUTHENTICATION_FAILED_MESSAGE))
+        return RequestResult.Success(account)
+    }
+
+    override fun registerAccount(phone: String, password: String): RequestResult<Account> {
         val account = AppDatabase.database.sequenceOf(AccountTable).find { it.phone eq phone }?.toAccount()
         if (null != account){
-            return Result.failure(RequestErrorMessage(Constant.REGISTER_PHONE_USED_CODE,Constant.REGISTER_PHONE_USED_MESSAGE))
+            return RequestResult.Failure(RequestErrorMessage(Constant.REGISTER_PHONE_USED_CODE,Constant.REGISTER_PHONE_USED_MESSAGE))
         }
         val index = AppDatabase.database.insertAndGenerateKey(AccountTable){
             set(AccountTable.phone,phone)
@@ -29,11 +34,11 @@ class AccountServiceImpl: AccountService {
             set(AccountTable.username,phone)
         }
         val registerAccount = AppDatabase.database.sequenceOf(AccountTable).find { it.id eq (index as Int) }?.toAccount()
-            ?: return Result.failure(RequestErrorMessage(Constant.NOT_FOUND_ACCOUNT_CODE,Constant.NOT_FOUND_ACCOUNT_MESSAGE))
-        return Result.success(registerAccount)
+            ?: return RequestResult.Failure(RequestErrorMessage(Constant.ACCOUNT_SELECT_FAILED_CODE,Constant.ACCOUNT_SELECT_FAILED_MESSAGE))
+        return RequestResult.Success(registerAccount)
     }
 
-    override fun updateAccountInformation(accountId:Int,information: AccountInformation): Result<Boolean> {
+    override fun updateAccountInformation(accountId:Int,information: AccountInformation): RequestResult<Boolean> {
         val result = AppDatabase.database.update(AccountTable){
             if (!information.username.isNullOrEmpty()){
                 set(AccountTable.username,information.username)
@@ -51,12 +56,12 @@ class AccountServiceImpl: AccountService {
                 AccountTable.id eq accountId
             }
         }
-        return if (result == 1) Result.success(true) else Result.failure(RequestErrorMessage(
+        return if (result == 1) RequestResult.Success(true) else RequestResult.Failure(RequestErrorMessage(
             Constant.REGISTER_PHONE_USED_CODE,Constant.REGISTER_PHONE_USED_MESSAGE
         ))
     }
 
-    override fun uploadHeader(accountId: Int, headerFileName: String): RequestResult {
+    override fun uploadHeader(accountId: Int, headerFileName: String): RequestResult<Boolean> {
         val result = AppDatabase.database.update(AccountTable) {
             set(AccountTable.header,headerFileName)
             where {
@@ -66,7 +71,7 @@ class AccountServiceImpl: AccountService {
         return if (result == 1) RequestResult.Success(true) else RequestResult.Failure(RequestErrorMessage(Constant.UPDATE_ACCOUNT_HEADER_FAILED_CODE,Constant.UPDATE_ACCOUNT_HEADER_FAILED_MESSAGE))
     }
 
-    override fun updatePassword(accountId: Int, oldPassword: String, newPassword: String): RequestResult {
+    override fun updatePassword(accountId: Int, oldPassword: String, newPassword: String): RequestResult<Boolean> {
         val result = AppDatabase.database.update(AccountTable) {
             set(AccountTable.password,newPassword)
             where {

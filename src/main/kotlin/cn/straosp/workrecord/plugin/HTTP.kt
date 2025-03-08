@@ -18,7 +18,9 @@ import org.slf4j.event.Level
 fun Application.configureHTTP() {
     install(ContentNegotiation) {
         json(Json {
+            encodeDefaults = true
             ignoreUnknownKeys = true
+            allowSpecialFloatingPointValues = true
         })
     }
     install(CORS) {

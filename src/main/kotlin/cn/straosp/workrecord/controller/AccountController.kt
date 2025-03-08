@@ -30,6 +30,7 @@ fun Routing.accountController(){
             when(result){
                 is RequestResult.Success -> {
                     val localDateTime = Date.from(LocalDateTime.now(ZoneId.systemDefault()).plusMonths(1).atZone(ZoneId.systemDefault()).toInstant())
+                    println("Account: ${result.data}")
                     val token = JWT.create()
                         .withAudience(jwtAudience)
                         .withIssuer(jwtIssuer)
@@ -41,7 +42,7 @@ fun Routing.accountController(){
                     call.respond(R.success(data = Token(token)))
                 }
                 is RequestResult.Failure -> {
-                    call.respond(result.errorMessage.toR())
+                    call.respond(R.error(Constant.ACCOUNT_LOGIN_FAILED_CODE,Constant.ACCOUNT_LOGIN_FAILED_MESSAGE))
                 }
             }
         }
@@ -69,7 +70,7 @@ fun Routing.accountController(){
                 }
             }
         }
-        authenticate {
+        authenticate("auth") {
             post("/{accountId}/avatar"){
                 val accountId = call.pathParameters["accountId"] ?: ""
                 val regex = Regex("\\d*")
@@ -138,7 +139,7 @@ fun Routing.accountController(){
                 }
                 when(val result = accountService.getAccountById(accountId.toInt())){
                     is RequestResult.Success -> {
-                        call.respond(result.data)
+                        call.respond(R.success(data = result.data))
                     }
                     is RequestResult.Failure -> {
                         call.respond(result.errorMessage.toR())

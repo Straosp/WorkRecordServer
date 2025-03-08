@@ -72,13 +72,20 @@ class AccountServiceImpl: AccountService {
     }
 
     override fun updatePassword(accountId: Int, oldPassword: String, newPassword: String): RequestResult<Boolean> {
+        val accounts = AppDatabase.database.from(AccountTable)
+            .select()
+            .where { AccountTable.id eq accountId and (AccountTable.password eq oldPassword) }
+            .map { row -> row[AccountTable.id] }.toList() ?: emptyList()
+        if (accounts.isEmpty()){
+            return RequestResult.Failure(RequestErrorMessage(Constant.UPDATE_ACCOUNT_OLD_PASSWORD_FAILED_CODE,Constant.UPDATE_ACCOUNT_OLD_PASSWORD_FAILED_MESSAGE))
+        }
         val result = AppDatabase.database.update(AccountTable) {
             set(AccountTable.password,newPassword)
             where {
                 (AccountTable.id eq accountId) and (AccountTable.password eq oldPassword)
             }
         }
-        return if (result == 1) RequestResult.Success(true) else RequestResult.Failure(RequestErrorMessage(Constant.UPDATE_ACCOUNT_HEADER_FAILED_CODE,Constant.UPDATE_ACCOUNT_HEADER_FAILED_MESSAGE))
+        return if (result == 1) RequestResult.Success(true) else RequestResult.Failure(RequestErrorMessage(Constant.UPDATE_ACCOUNT_PASSWORD_FAILED_CODE,Constant.UPDATE_ACCOUNT_PASSWORD_FAILED_MESSAGE))
     }
 
 

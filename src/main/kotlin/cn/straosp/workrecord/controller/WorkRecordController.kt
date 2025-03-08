@@ -4,9 +4,11 @@ import cn.straosp.workrecord.bean.AddWorkRecord
 import cn.straosp.workrecord.bean.UpdateWorkRecord
 import cn.straosp.workrecord.plugin.getAccountId
 import cn.straosp.workrecord.service.WorkRecordService
+import cn.straosp.workrecord.util.Constant
 import cn.straosp.workrecord.util.R
 import cn.straosp.workrecord.util.RequestResult
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -15,7 +17,7 @@ import org.koin.ktor.ext.inject
 fun Routing.workRecordController(){
     val workRecordService by application.inject<WorkRecordService>()
     route("/workRecord"){
-        authenticate {
+        authenticate("auth") {
             post {
                 val workRecord = runCatching { call.receive<AddWorkRecord>() }.getOrNull()
                 workRecord?.let {
@@ -114,7 +116,13 @@ fun Routing.workRecordController(){
                 call.respond(R.success(data = workRecordService.getLunarYearWorkRecords(accountId = getAccountId(),year = year.toInt())))
 
             }
+
+        }
+        authenticate("auth") {
             get("lunar/summary"){
+                val principal = call.principal<JWTPrincipal>()
+                println("Controller Claim: ${principal?.payload?.claims}")
+
                 val regex = Regex("[2-9][0-9]{3}")
                 val year = call.queryParameters["year"] ?: ""
                 if (!regex.matches(year)){

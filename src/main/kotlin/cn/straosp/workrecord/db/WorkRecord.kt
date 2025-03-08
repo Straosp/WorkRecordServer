@@ -18,7 +18,7 @@ interface WorkRecordEntity: Entity<WorkRecordEntity> {
     val workDate: LocalDate
     val accountId:Int
 }
-object WorkRecordTable: Table<WorkRecordEntity>("work_record") {
+object WorkRecordTable: Table<WorkRecordEntity>("work_records") {
     val id = int("id").primaryKey().bindTo { it.id }
     val teamSize = int("team_size").bindTo { it.teamSize }
     val singleProductQuantity = double("single_product_quantity").bindTo { it.singleProductQuantity }

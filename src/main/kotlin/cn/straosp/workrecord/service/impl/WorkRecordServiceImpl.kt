@@ -57,7 +57,9 @@ class WorkRecordServiceImpl : WorkRecordService {
         val endLocalDate = LocalDate.of(year,month,month.dayOfMonth(year))
         val result = AppDatabase.database.from(WorkRecordTable).select().where {
             WorkRecordTable.workDate.between(LocalDateRange(startLocalDate,endLocalDate)) and   (WorkRecordTable.accountId eq accountId)
-        }.map { row ->
+        }
+            .orderBy(WorkRecordTable.workDate.desc())
+            .map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
                 teamSize = row[WorkRecordTable.teamSize] ?: 0,
@@ -96,7 +98,7 @@ class WorkRecordServiceImpl : WorkRecordService {
             if (key == 0){
                 workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity)}
             }else{
-                key?.let {
+                key.let {
                     workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity) + (it.multipleProductPrice.times(it.multipleProductQuantity).div(key)) }
                 }
             }
@@ -115,7 +117,9 @@ class WorkRecordServiceImpl : WorkRecordService {
         val endLocalDate = getLunarLastDayToSolar(year)
         val result = AppDatabase.database.from(WorkRecordTable).select().where {
             WorkRecordTable.workDate.between(LocalDateInterval(startLocalDate,endLocalDate)) and   (WorkRecordTable.accountId eq accountId)
-        }.map { row ->
+        }
+            .orderBy(WorkRecordTable.workDate.desc())
+            .map { row ->
             WorkRecord(
                 id = row[WorkRecordTable.id] ?: 0,
                 teamSize = row[WorkRecordTable.teamSize] ?: 0,
@@ -154,7 +158,7 @@ class WorkRecordServiceImpl : WorkRecordService {
             if (key == 0){
                 workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity)}
             }else{
-                key?.let {
+                key.let {
                     workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity) + (it.multipleProductPrice.times(it.multipleProductQuantity).div(key)) }
                 }
             }
@@ -187,7 +191,7 @@ class WorkRecordServiceImpl : WorkRecordService {
                     accountId = row[WorkRecordTable.accountId] ?: 0
                 )
             }
-        return if (result.isNullOrEmpty()) null else result.first()
+        return if (result.isEmpty()) null else result.first()
     }
 
     override fun updateWorkRecord(accountId: Int, workRecordId:Int,workRecord: UpdateWorkRecord): RequestResult<Boolean> {

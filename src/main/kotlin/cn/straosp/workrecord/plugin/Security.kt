@@ -3,6 +3,8 @@ package cn.straosp.workrecord.plugin
 import cn.straosp.workrecord.service.AccountService
 import cn.straosp.workrecord.util.Constant
 import cn.straosp.workrecord.util.R
+import cn.straosp.workrecord.util.RequestResult
+import cn.straosp.workrecord.util.isSuccess
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.application.*
@@ -17,8 +19,8 @@ fun Application.configureSecurity() {
     val jwtAudience = environment.config.property("jwt.audience").getString()
     val jwtIssuer = environment.config.property("jwt.issuer").getString()
     val jwtSecret = environment.config.property("jwt.secret").getString()
-    authentication {
-        jwt {
+    install(Authentication){
+        jwt("auth") {
             realm = jwtRealm
             verifier(
                 JWT
@@ -30,8 +32,15 @@ fun Application.configureSecurity() {
             validate { credential ->
                 val phone = credential.payload.getClaim(Constant.TOKEN_CLAIM_PHONE_KEY).asString()
                 val password = credential.payload.getClaim(Constant.TOKEN_CLAIM_PASSWORD_KEY).asString()
-                if (accountService.verifyAccount(phone,password).isSuccess){
-                    JWTPrincipal(credential.payload)
+                println("Claim: ${credential.payload.claims}")
+                val result = accountService.verifyAccount(phone,password)
+                when(result){
+                    is RequestResult.Success -> {
+                        JWTPrincipal(credential.payload)
+                    }
+                    is RequestResult.Failure -> {
+                        null
+                    }
                 }
             }
             challenge { _, _ ->

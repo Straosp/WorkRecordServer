@@ -40,8 +40,9 @@ fun Routing.workRecordController(){
             }
             put("/{id}"){
                 val workRecord = runCatching { call.receive<UpdateWorkRecord>() }.getOrNull()
-                val id = runCatching { call.pathParameters["id"]?.toInt() }.getOrNull() ?: -1
-                if (id == -1) {
+                val workRecordIdRegex = Regex("\\d*")
+                val workRecordId = call.pathParameters["id"] ?: ""
+                if (!workRecordIdRegex.matches(workRecordId)){
                     call.respond(R.parameterError("workRecordId"))
                     return@put
                 }
@@ -51,7 +52,7 @@ fun Routing.workRecordController(){
                     }else if ((workRecord.teamSize ?: 0) > 0 && (workRecord.multipleProductQuantity ?: .0) <= .0){
                         call.respond(R.parameterError("teamSize > 0 AND multipleProductQuantity <= 0"))
                     }else {
-                        when(val result = workRecordService.updateWorkRecord(accountId = getAccountId(), workRecordId = id,workRecord = workRecord)){
+                        when(val result = workRecordService.updateWorkRecord(accountId = getAccountId(), workRecordId = workRecordId.toInt(),workRecord = workRecord)){
                             is RequestResult.Success<*> -> {
                                 call.respond(R.success())
                             }
@@ -116,9 +117,6 @@ fun Routing.workRecordController(){
                 call.respond(R.success(data = workRecordService.getLunarYearWorkRecords(accountId = getAccountId(),year = year.toInt())))
 
             }
-
-        }
-        authenticate("auth") {
             get("lunar/summary"){
                 val principal = call.principal<JWTPrincipal>()
                 println("Controller Claim: ${principal?.payload?.claims}")
@@ -131,6 +129,8 @@ fun Routing.workRecordController(){
                 }
                 call.respond(R.success(data = workRecordService.getLunarYearWorkSummary(accountId = getAccountId(),year = year.toInt())))
             }
+
         }
+
     }
 }

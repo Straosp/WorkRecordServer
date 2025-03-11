@@ -11,6 +11,7 @@ interface WorkRecordService {
     fun getMonthWorkSummary(accountId: Int,year:Int,month: Int): MonthWorkSummary
     fun getLunarYearWorkRecords(accountId: Int,year: Int): List<WorkRecord>
     fun getLunarYearWorkSummary(accountId: Int,year: Int): YearWorkSummary
+    fun getLunarYearWorkSummaryGroupMonth(accountId: Int,year: Int): List<MonthWorkSummary>
     fun getWorkRecordDetailById(accountId: Int,workRecordId: Int):WorkRecord?
     fun updateWorkRecord(accountId: Int,workRecordId:Int,workRecord: UpdateWorkRecord): RequestResult<Boolean>
     fun deleteWorkRecord(accountId: Int,workRecordId: Int)

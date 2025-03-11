@@ -174,6 +174,51 @@ class WorkRecordServiceImpl : WorkRecordService {
 
     }
 
+    override fun getLunarYearWorkSummaryGroupMonth(accountId: Int, year: Int): List<MonthWorkSummary> {
+        val startLocalDate = getLunarFirstDayToSolar(year)
+        val endLocalDate = getLunarLastDayToSolar(year)
+        val result = AppDatabase.database.from(WorkRecordTable).select().where {
+            WorkRecordTable.workDate.between(LocalDateInterval(startLocalDate,endLocalDate)) and   (WorkRecordTable.accountId eq accountId)
+        }.map { row ->
+            WorkRecord(
+                id = row[WorkRecordTable.id] ?: 0,
+                teamSize = row[WorkRecordTable.teamSize] ?: 0,
+                singleProductPrice = row[WorkRecordTable.singleProductPrice] ?: .0,
+                singleProductQuantity = row[WorkRecordTable.singleProductQuantity] ?: .0,
+                multipleProductPrice = row[WorkRecordTable.multipleProductPrice] ?: .0,
+                multipleProductQuantity = row[WorkRecordTable.multipleProductQuantity] ?: .0,
+                workDate = (row[WorkRecordTable.workDate])?.toISODateString() ?: "",
+                accountId = row[WorkRecordTable.accountId] ?: 0
+            )
+        }
+        val decimalFormat = DecimalFormat("#.##").apply {
+            roundingMode = RoundingMode.DOWN
+        }
+
+        return result.groupBy { it.workDate.toLocalDate().monthValue }.map { (key, monthRecord) ->
+            val salary = monthRecord.groupBy { it.teamSize }.map { (key, workRecords) ->
+                if (key == 0){
+                    workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity)}
+                }else{
+                    key.let {
+                        workRecords.sumOf { (it.singleProductPrice * it.singleProductQuantity) + (it.multipleProductPrice.times(it.multipleProductQuantity).div(key)) }
+                    }
+                }
+            }.sumOf { it ?: .0 }
+            MonthWorkSummary(
+                workDate = "$year-${key.toString().padStart(2,'0')}",
+                workingDays = monthRecord.size,
+                totalSalary = decimalFormat.format(salary).toDouble(),
+                totalSingleProductQuantity = monthRecord.sumOf { it.singleProductQuantity },
+                totalMultipleProductQuantity = monthRecord.sumOf { it.multipleProductQuantity }
+            )
+
+        }
+
+
+
+    }
+
     override fun getWorkRecordDetailById(accountId: Int, workRecordId: Int): WorkRecord? {
         val result = AppDatabase.database.from(WorkRecordTable).select()
             .where {

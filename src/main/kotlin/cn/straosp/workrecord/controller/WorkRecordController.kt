@@ -4,11 +4,9 @@ import cn.straosp.workrecord.bean.AddWorkRecord
 import cn.straosp.workrecord.bean.UpdateWorkRecord
 import cn.straosp.workrecord.plugin.getAccountId
 import cn.straosp.workrecord.service.WorkRecordService
-import cn.straosp.workrecord.util.Constant
 import cn.straosp.workrecord.util.R
 import cn.straosp.workrecord.util.RequestResult
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -107,7 +105,7 @@ fun Routing.workRecordController(){
                 }
                 call.respond(R.success(data = workRecordService.getMonthWorkSummary(accountId = getAccountId(), year = year.toInt(),month = month.toInt())))
             }
-            get("lunar/detail"){
+            get("/lunar/detail"){
                 val regex = Regex("[2-9][0-9]{3}")
                 val year = call.queryParameters["year"] ?: ""
                 if (!regex.matches(year)){
@@ -117,10 +115,7 @@ fun Routing.workRecordController(){
                 call.respond(R.success(data = workRecordService.getLunarYearWorkRecords(accountId = getAccountId(),year = year.toInt())))
 
             }
-            get("lunar/summary"){
-                val principal = call.principal<JWTPrincipal>()
-                println("Controller Claim: ${principal?.payload?.claims}")
-
+            get("/lunar/summary"){
                 val regex = Regex("[2-9][0-9]{3}")
                 val year = call.queryParameters["year"] ?: ""
                 if (!regex.matches(year)){
@@ -129,7 +124,26 @@ fun Routing.workRecordController(){
                 }
                 call.respond(R.success(data = workRecordService.getLunarYearWorkSummary(accountId = getAccountId(),year = year.toInt())))
             }
+            get("/year/summary"){
+                val yearRegex = Regex("\\d{4}")
+                val year = call.queryParameters["year"] ?: ""
+                if (!yearRegex.matches(year)){
+                    call.respond(R.parameterError("年或月不合法"))
+                    return@get
+                }
 
+            }
+            get("/lunar/month/summary"){
+                val regex = Regex("[2-9][0-9]{3}")
+                val year = call.queryParameters["year"] ?: ""
+                if (!regex.matches(year)){
+                    call.respond(R.parameterError("年不合法"))
+                    return@get
+                }
+                call.respond(
+                    R.success(data = workRecordService.getLunarYearWorkSummaryGroupMonth(accountId = getAccountId(), year = year.toInt()))
+                )
+            }
         }
 
     }

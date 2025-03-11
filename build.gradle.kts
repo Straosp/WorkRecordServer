@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "cn.straosp.workrecord"
-version = "0.0.2"
+version = "0.0.3"
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
@@ -31,7 +31,7 @@ dependencies {
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.server.call.logging)
-    implementation(libs.ktor.server.openapi)
+    implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.webjars)
     implementation(libs.jquery)

@@ -8,7 +8,7 @@ ktorm = "4.0.0"
 mysql-connector = "8.4.0"
 druid = "1.2.22"
 protobuf-java = "4.28.2"
-lunar-version = "1.5"
+lunar-version = "1.7.7"
 jquery = "3.5.0"
 
 [libraries]
@@ -37,7 +37,7 @@ ktorm-mysql = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
 mysql = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
 druid = { module = "com.alibaba:druid", version.ref = "druid" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf-java"}
-lunar = { module = "com.github.heqiao2010:lunar", version.ref = "lunar-version" }
+lunar = { module = "cn.6tail:lunar", version.ref = "lunar-version" }
 
 
 [plugins]

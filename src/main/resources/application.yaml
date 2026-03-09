@@ -13,7 +13,7 @@ jwt:
 file: "./static"
 
 database:
-  url: "jdbc:mysql://10.10.10.10:3306/work_record"
+  url: "jdbc:mysql://47.95.206.251:3306/work_record"
   driverClassName: "com.mysql.cj.jdbc.Driver"
   username: "work_record"
   password: "785125ABC"

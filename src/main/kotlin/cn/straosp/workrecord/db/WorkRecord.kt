@@ -35,6 +35,5 @@ fun WorkRecordEntity.toWorkRecord(): WorkRecord = WorkRecord(
     singleProductPrice = singleProductPrice,
     multipleProductPrice = multipleProductPrice,
     multipleProductQuantity = multipleProductQuantity,
-    workDate = workDate.toISODateString(),
-    accountId = accountId
+    workDate = workDate.toISODateString()
 )
